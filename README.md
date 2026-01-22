@@ -4,7 +4,7 @@
 
 # VibeRender
 
-[![CI](https://github.com/yourusername/vibe-render/workflows/CI/badge.svg)](https://github.com/yourusername/vibe-render/actions)
+[![CI](https://github.com/andrepiske/vibe-render/workflows/CI/badge.svg)](https://github.com/andrepiske/vibe-render/actions)
 [![Gem Version](https://badge.fury.io/rb/vibe_render.svg)](https://badge.fury.io/rb/vibe_render)
 
 VibeRender is a Ruby gem that provides a simple code API for rendering webpages as images (PNG, JPEG) or PDF files using Chrome/Chromium via the Ferrum gem. No HTTP requests or web servers required—just clean, straightforward code.
