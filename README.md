@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="doc/project_logo.png" alt="VibeRender Logo" width="600">
+</div>
+
 # VibeRender
 
 [![CI](https://github.com/yourusername/vibe-render/workflows/CI/badge.svg)](https://github.com/yourusername/vibe-render/actions)
