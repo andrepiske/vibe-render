@@ -6,6 +6,8 @@ class TestRenderer < Minitest::Test
   def setup
     @renderer = VibeRender::Renderer.new
     @test_html_file = create_test_html
+    @artifacts_dir = File.join(Dir.pwd, "test", "artifacts")
+    FileUtils.mkdir_p(@artifacts_dir) if ENV["CI"]
   end
 
   def teardown
@@ -24,6 +26,9 @@ class TestRenderer < Minitest::Test
     refute_empty png_data
     # PNG files start with the magic bytes \x89PNG
     assert_equal "\x89PNG".b, png_data[0..3]
+    
+    # Save artifact for CI inspection
+    save_artifact("test_render_png.png", png_data) if ENV["CI"]
   end
 
   def test_render_png_to_file
@@ -38,6 +43,9 @@ class TestRenderer < Minitest::Test
       # Verify it's a valid PNG
       png_data = File.binread(output_path)
       assert_equal "\x89PNG".b, png_data[0..3]
+      
+      # Save artifact for CI inspection
+      save_artifact("test_render_png_to_file.png", png_data) if ENV["CI"]
     end
   end
 
@@ -48,6 +56,9 @@ class TestRenderer < Minitest::Test
     refute_empty jpeg_data
     # JPEG files start with \xFF\xD8
     assert_equal "\xFF\xD8".b, jpeg_data[0..1]
+    
+    # Save artifact for CI inspection
+    save_artifact("test_render_jpeg.jpg", jpeg_data) if ENV["CI"]
   end
 
   def test_render_jpeg_with_quality
@@ -58,6 +69,12 @@ class TestRenderer < Minitest::Test
     # Note: This is a rough heuristic and may not always hold
     assert jpeg_high.bytesize > 0
     assert jpeg_low.bytesize > 0
+    
+    # Save artifacts for CI inspection
+    if ENV["CI"]
+      save_artifact("test_render_jpeg_quality_95.jpg", jpeg_high)
+      save_artifact("test_render_jpeg_quality_20.jpg", jpeg_low)
+    end
   end
 
   def test_render_pdf_returns_binary_data
@@ -67,6 +84,9 @@ class TestRenderer < Minitest::Test
     refute_empty pdf_data
     # PDF files start with %PDF
     assert_equal "%PDF", pdf_data[0..3]
+    
+    # Save artifact for CI inspection
+    save_artifact("test_render_pdf.pdf", pdf_data) if ENV["CI"]
   end
 
   def test_render_pdf_to_file
@@ -81,6 +101,9 @@ class TestRenderer < Minitest::Test
       # Verify it's a valid PDF
       pdf_data = File.binread(output_path)
       assert_equal "%PDF", pdf_data[0..3]
+      
+      # Save artifact for CI inspection
+      save_artifact("test_render_pdf_to_file.pdf", pdf_data) if ENV["CI"]
     end
   end
 
@@ -90,6 +113,9 @@ class TestRenderer < Minitest::Test
     assert_instance_of String, pdf_data
     refute_empty pdf_data
     assert_equal "%PDF", pdf_data[0..3]
+    
+    # Save artifact for CI inspection
+    save_artifact("test_render_pdf_landscape.pdf", pdf_data) if ENV["CI"]
   end
 
   def test_convenience_method_png
@@ -97,6 +123,9 @@ class TestRenderer < Minitest::Test
     
     assert_instance_of String, png_data
     assert_equal "\x89PNG".b, png_data[0..3]
+    
+    # Save artifact for CI inspection
+    save_artifact("test_convenience_method_png.png", png_data) if ENV["CI"]
   end
 
   def test_convenience_method_jpeg
@@ -104,6 +133,9 @@ class TestRenderer < Minitest::Test
     
     assert_instance_of String, jpeg_data
     assert_equal "\xFF\xD8".b, jpeg_data[0..1]
+    
+    # Save artifact for CI inspection
+    save_artifact("test_convenience_method_jpeg.jpg", jpeg_data) if ENV["CI"]
   end
 
   def test_convenience_method_jpg_alias
@@ -111,6 +143,9 @@ class TestRenderer < Minitest::Test
     
     assert_instance_of String, jpg_data
     assert_equal "\xFF\xD8".b, jpg_data[0..1]
+    
+    # Save artifact for CI inspection
+    save_artifact("test_convenience_method_jpg_alias.jpg", jpg_data) if ENV["CI"]
   end
 
   def test_convenience_method_pdf
@@ -118,6 +153,9 @@ class TestRenderer < Minitest::Test
     
     assert_instance_of String, pdf_data
     assert_equal "%PDF", pdf_data[0..3]
+    
+    # Save artifact for CI inspection
+    save_artifact("test_convenience_method_pdf.pdf", pdf_data) if ENV["CI"]
   end
 
   def test_convenience_method_invalid_format
@@ -143,6 +181,12 @@ class TestRenderer < Minitest::Test
   end
 
   private
+
+  def save_artifact(filename, data)
+    artifact_path = File.join(@artifacts_dir, filename)
+    File.binwrite(artifact_path, data)
+    puts "  Saved artifact: #{filename}"
+  end
 
   def create_test_html
     file = Tempfile.new(["test", ".html"])

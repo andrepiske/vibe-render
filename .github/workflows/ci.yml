@@ -29,6 +29,10 @@ jobs:
       with:
         chrome-version: stable
     
+    - name: Set Chrome path for Ferrum
+      run: |
+        echo "BROWSER_PATH=${{ steps.setup-chrome.outputs.chrome-path }}" >> $GITHUB_ENV
+    
     - name: Verify Chrome installation
       run: |
         ${{ steps.setup-chrome.outputs.chrome-path }} --version
@@ -38,7 +42,20 @@ jobs:
     
     - name: Run tests
       run: bundle exec rake test
+      env:
+        CI: true
+    
+    - name: Upload test artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-rendered-files
+        path: test/artifacts/
+        if-no-files-found: warn
+        retention-days: 30
     
     - name: Run tests with verbose output
       if: failure()
       run: bundle exec rake test TESTOPTS="-v"
+      env:
+        CI: true

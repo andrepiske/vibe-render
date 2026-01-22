@@ -13,10 +13,19 @@ module VibeRender
     # @param timeout [Integer] Default timeout in seconds (default: 30)
     def initialize(headless: true, browser_options: {}, timeout: DEFAULT_TIMEOUT)
       @timeout = timeout
-      @browser_options = {
+      
+      # Build base options
+      base_options = {
         headless: headless,
-        timeout: timeout
-      }.merge(browser_options)
+        timeout: timeout,
+        process_timeout: 30,  # Give Chrome more time to start in CI
+        browser_options: ci_browser_args
+      }
+      
+      # Use custom Chrome path in CI if provided
+      base_options[:browser_path] = ENV["BROWSER_PATH"] if ENV["BROWSER_PATH"]
+      
+      @browser_options = base_options.merge(browser_options)
       @browser = nil
     end
     
@@ -87,6 +96,18 @@ module VibeRender
     
     def wait_after_load(wait_time)
       sleep(wait_time) if wait_time && wait_time > 0
+    end
+    
+    def ci_browser_args
+      # Chrome flags needed for CI environments (especially GitHub Actions)
+      return {} unless ENV["CI"]
+      
+      {
+        "no-sandbox" => nil,
+        "disable-dev-shm-usage" => nil,
+        "disable-gpu" => nil,
+        "disable-software-rasterizer" => nil
+      }
     end
   end
 end
