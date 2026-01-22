@@ -30,9 +30,9 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   # Runtime dependencies
-  spec.add_dependency "ferrum", "~> 0.15"
+  spec.add_dependency "ferrum", "~> 0.17"
 
   # Development dependencies
-  spec.add_development_dependency "minitest", "~> 5.0"
+  spec.add_development_dependency "minitest", "~> 6.0"
   spec.add_development_dependency "rake", "~> 13.0"
 end

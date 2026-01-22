@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
 
 jobs:
   test:
@@ -15,7 +15,7 @@ jobs:
         ruby-version: ['3.4.8']
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
@@ -24,19 +24,14 @@ jobs:
         bundler-cache: true
     
     - name: Install Chrome
-      uses: browser-actions/setup-chrome@v1
+      id: setup-chrome
+      uses: browser-actions/setup-chrome@v2
       with:
         chrome-version: stable
     
-    - name: Install Chromium
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y chromium-browser
-    
     - name: Verify Chrome installation
       run: |
-        which google-chrome-stable || which chromium-browser
-        google-chrome-stable --version || chromium-browser --version
+        ${{ steps.setup-chrome.outputs.chrome-path }} --version
     
     - name: Install dependencies
       run: bundle install
