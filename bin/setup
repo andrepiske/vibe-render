@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+set -e
+
+echo "Setting up VibeRender development environment..."
+
+# Check for mise or asdf
+if command -v mise &> /dev/null; then
+  echo "✓ mise found, installing Ruby 3.4.8..."
+  mise install
+elif command -v asdf &> /dev/null; then
+  echo "✓ asdf found, installing Ruby 3.4.8..."
+  asdf install
+else
+  echo "⚠ Warning: Neither mise nor asdf found. Please install Ruby 3.4.8 manually."
+fi
+
+# Check Ruby version
+if command -v ruby &> /dev/null; then
+  RUBY_VERSION=$(ruby -v | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+  echo "✓ Ruby version: $RUBY_VERSION"
+else
+  echo "✗ Ruby not found. Please install Ruby 3.4.8"
+  exit 1
+fi
+
+# Install bundler
+if ! command -v bundle &> /dev/null; then
+  echo "Installing bundler..."
+  gem install bundler
+fi
+
+# Install dependencies
+echo "Installing dependencies..."
+bundle install
+
+# Check for Chrome/Chromium
+if command -v google-chrome &> /dev/null || command -v google-chrome-stable &> /dev/null || command -v chromium &> /dev/null || command -v chromium-browser &> /dev/null; then
+  echo "✓ Chrome/Chromium found"
+else
+  echo "⚠ Warning: Chrome/Chromium not found. Please install it to run tests."
+  echo "   macOS: brew install --cask google-chrome"
+  echo "   Linux: sudo apt-get install chromium-browser"
+fi
+
+echo ""
+echo "✓ Setup complete!"
+echo ""
+echo "Next steps:"
+echo "  1. Run tests:       bundle exec rake test"
+echo "  2. Try examples:    ruby examples/basic_screenshot.rb"
+echo "  3. Build gem:       bundle exec rake build"
+echo "  4. Install locally: bundle exec rake install"
