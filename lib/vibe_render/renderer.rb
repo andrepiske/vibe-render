@@ -44,6 +44,8 @@ module VibeRender
       screenshot_options[:path] = path if path
       
       result = browser.screenshot(**screenshot_options)
+      return nil if path
+
       decode_if_base64(result)
     end
     
@@ -63,6 +65,8 @@ module VibeRender
       screenshot_options[:path] = path if path
       
       result = browser.screenshot(**screenshot_options)
+      return nil if path
+
       decode_if_base64(result)
     end
     
@@ -82,6 +86,8 @@ module VibeRender
       pdf_options[:paper_size] = paper_size if paper_size
       
       result = browser.pdf(**pdf_options)
+      return nil if path
+
       decode_if_base64(result)
     end
     
