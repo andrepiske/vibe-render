@@ -40,10 +40,11 @@ module VibeRender
       browser.goto(url)
       wait_after_load(wait)
       
-      screenshot_options = { format: :png, full: full_page }
+      screenshot_options = { format: :png, full: full_page, encoding: :binary }
       screenshot_options[:path] = path if path
       
-      browser.screenshot(**screenshot_options)
+      result = browser.screenshot(**screenshot_options)
+      decode_if_base64(result)
     end
     
     # Render a webpage as JPEG
@@ -58,10 +59,11 @@ module VibeRender
       browser.goto(url)
       wait_after_load(wait)
       
-      screenshot_options = { format: :jpeg, quality: quality, full: full_page }
+      screenshot_options = { format: :jpeg, quality: quality, full: full_page, encoding: :binary }
       screenshot_options[:path] = path if path
       
-      browser.screenshot(**screenshot_options)
+      result = browser.screenshot(**screenshot_options)
+      decode_if_base64(result)
     end
     
     # Render a webpage as PDF
@@ -75,11 +77,12 @@ module VibeRender
       browser.goto(url)
       wait_after_load(wait)
       
-      pdf_options = { landscape: landscape }
+      pdf_options = { landscape: landscape, encoding: :binary }
       pdf_options[:path] = path if path
       pdf_options[:paper_size] = paper_size if paper_size
       
-      browser.pdf(**pdf_options)
+      result = browser.pdf(**pdf_options)
+      decode_if_base64(result)
     end
     
     # Close the browser instance
@@ -96,6 +99,19 @@ module VibeRender
     
     def wait_after_load(wait_time)
       sleep(wait_time) if wait_time && wait_time > 0
+    end
+    
+    def decode_if_base64(data)
+      return data if data.nil? # When path is provided, returns nil
+      
+      # Check if data looks like base64 (no binary characters in first few bytes)
+      # PNG starts with \x89PNG, JPEG with \xFF\xD8, PDF with %PDF
+      if data.is_a?(String) && data.encoding == Encoding::US_ASCII && !data.start_with?("\x89PNG", "\xFF\xD8".b, "%PDF")
+        require "base64"
+        Base64.decode64(data)
+      else
+        data
+      end
     end
     
     def ci_browser_args

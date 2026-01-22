@@ -6,13 +6,18 @@ class TestRenderer < Minitest::Test
   def setup
     @renderer = VibeRender::Renderer.new
     @test_html_file = create_test_html
+    @test_html_tempfile = @test_html_file[:tempfile]  # Keep reference
+    @test_html_url = @test_html_file[:url]
     @artifacts_dir = File.join(Dir.pwd, "test", "artifacts")
     FileUtils.mkdir_p(@artifacts_dir) if ENV["CI"]
   end
 
   def teardown
     @renderer.close if @renderer
-    FileUtils.rm_f(@test_html_file) if @test_html_file && File.exist?(@test_html_file)
+    if @test_html_tempfile
+      @test_html_tempfile.close
+      @test_html_tempfile.unlink
+    end
   end
 
   def test_renderer_initialization
@@ -20,7 +25,7 @@ class TestRenderer < Minitest::Test
   end
 
   def test_render_png_returns_binary_data
-    png_data = @renderer.render_png(@test_html_file)
+    png_data = @renderer.render_png(@test_html_url)
     
     assert_instance_of String, png_data
     refute_empty png_data
@@ -34,7 +39,7 @@ class TestRenderer < Minitest::Test
   def test_render_png_to_file
     Dir.mktmpdir do |dir|
       output_path = File.join(dir, "test_output.png")
-      result = @renderer.render_png(@test_html_file, path: output_path)
+      result = @renderer.render_png(@test_html_url, path: output_path)
       
       assert_nil result # When path is provided, screenshot returns nil
       assert File.exist?(output_path)
@@ -50,7 +55,7 @@ class TestRenderer < Minitest::Test
   end
 
   def test_render_jpeg_returns_binary_data
-    jpeg_data = @renderer.render_jpeg(@test_html_file)
+    jpeg_data = @renderer.render_jpeg(@test_html_url)
     
     assert_instance_of String, jpeg_data
     refute_empty jpeg_data
@@ -62,8 +67,8 @@ class TestRenderer < Minitest::Test
   end
 
   def test_render_jpeg_with_quality
-    jpeg_high = @renderer.render_jpeg(@test_html_file, quality: 95)
-    jpeg_low = @renderer.render_jpeg(@test_html_file, quality: 20)
+    jpeg_high = @renderer.render_jpeg(@test_html_url, quality: 95)
+    jpeg_low = @renderer.render_jpeg(@test_html_url, quality: 20)
     
     # Higher quality should generally produce larger files
     # Note: This is a rough heuristic and may not always hold
@@ -78,7 +83,7 @@ class TestRenderer < Minitest::Test
   end
 
   def test_render_pdf_returns_binary_data
-    pdf_data = @renderer.render_pdf(@test_html_file)
+    pdf_data = @renderer.render_pdf(@test_html_url)
     
     assert_instance_of String, pdf_data
     refute_empty pdf_data
@@ -92,7 +97,7 @@ class TestRenderer < Minitest::Test
   def test_render_pdf_to_file
     Dir.mktmpdir do |dir|
       output_path = File.join(dir, "test_output.pdf")
-      result = @renderer.render_pdf(@test_html_file, path: output_path)
+      result = @renderer.render_pdf(@test_html_url, path: output_path)
       
       assert_nil result # When path is provided, pdf returns nil
       assert File.exist?(output_path)
@@ -108,7 +113,7 @@ class TestRenderer < Minitest::Test
   end
 
   def test_render_pdf_landscape
-    pdf_data = @renderer.render_pdf(@test_html_file, landscape: true)
+    pdf_data = @renderer.render_pdf(@test_html_url, landscape: true)
     
     assert_instance_of String, pdf_data
     refute_empty pdf_data
@@ -119,7 +124,7 @@ class TestRenderer < Minitest::Test
   end
 
   def test_convenience_method_png
-    png_data = VibeRender.render(@test_html_file, format: :png)
+    png_data = VibeRender.render(@test_html_url, format: :png)
     
     assert_instance_of String, png_data
     assert_equal "\x89PNG".b, png_data[0..3]
@@ -129,7 +134,7 @@ class TestRenderer < Minitest::Test
   end
 
   def test_convenience_method_jpeg
-    jpeg_data = VibeRender.render(@test_html_file, format: :jpeg)
+    jpeg_data = VibeRender.render(@test_html_url, format: :jpeg)
     
     assert_instance_of String, jpeg_data
     assert_equal "\xFF\xD8".b, jpeg_data[0..1]
@@ -139,7 +144,7 @@ class TestRenderer < Minitest::Test
   end
 
   def test_convenience_method_jpg_alias
-    jpg_data = VibeRender.render(@test_html_file, format: :jpg)
+    jpg_data = VibeRender.render(@test_html_url, format: :jpg)
     
     assert_instance_of String, jpg_data
     assert_equal "\xFF\xD8".b, jpg_data[0..1]
@@ -149,7 +154,7 @@ class TestRenderer < Minitest::Test
   end
 
   def test_convenience_method_pdf
-    pdf_data = VibeRender.render(@test_html_file, format: :pdf)
+    pdf_data = VibeRender.render(@test_html_url, format: :pdf)
     
     assert_instance_of String, pdf_data
     assert_equal "%PDF", pdf_data[0..3]
@@ -160,7 +165,7 @@ class TestRenderer < Minitest::Test
 
   def test_convenience_method_invalid_format
     error = assert_raises(VibeRender::Error) do
-      VibeRender.render(@test_html_file, format: :invalid)
+      VibeRender.render(@test_html_url, format: :invalid)
     end
     
     assert_match(/Unsupported format/, error.message)
@@ -168,16 +173,15 @@ class TestRenderer < Minitest::Test
 
   def test_close_renderer
     renderer = VibeRender::Renderer.new
-    renderer.render_png(@test_html_file)
+    renderer.render_png(@test_html_url)
     
-    assert_nothing_raised do
-      renderer.close
-    end
+    # Should close without errors
+    renderer.close
     
     # Closing again should be safe
-    assert_nothing_raised do
-      renderer.close
-    end
+    renderer.close
+    
+    assert true # Test passes if no exceptions raised
   end
 
   private
@@ -218,7 +222,7 @@ class TestRenderer < Minitest::Test
       </body>
       </html>
     HTML
-    file.close
-    "file://#{file.path}"
+    file.flush  # Ensure content is written
+    { tempfile: file, url: "file://#{file.path}" }
   end
 end
